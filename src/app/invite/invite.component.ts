@@ -1,10 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { InviteService } from '../service/invite.service';
+import { untilDestroyed } from 'ngx-take-until-destroy';
+import { ToastrService } from 'ngx-toastr';
 import { of, combineLatest } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { untilDestroyed } from 'ngx-take-until-destroy';
-import { User } from '../modals';
+import { InviteService } from '../service/invite.service';
+import { InvitedUser, User } from '../models';
 
 const users: User[] = [
   { email: 'user0@comtravo.com' },
@@ -26,7 +27,10 @@ const users: User[] = [
   styleUrls: ['./invite.component.css']
 })
 export class InviteComponent implements OnInit, OnDestroy {
-  constructor(private inviteService: InviteService, private router: Router) {}
+  constructor(
+      private inviteService: InviteService,
+      private router: Router,
+      private toastr: ToastrService) {}
 
   ngOnInit(): void {}
 
@@ -35,7 +39,18 @@ export class InviteComponent implements OnInit, OnDestroy {
   onSubmit(): void {
     combineLatest(users.map(user => this.inviteService.invite(user))).pipe(
         untilDestroyed(this),
-        catchError((error: Response) => of(error))
-    ).subscribe(() => this.router.navigate(['/list']));
+        catchError((error: Response) => of(error))).subscribe(
+            (invitedUsers: InvitedUser[]) => this.handleSuccess(invitedUsers));
+  }
+
+  private handleSuccess(invitedUsers: InvitedUser[]): void {
+    let invited = 0;
+    invitedUsers.forEach((user: InvitedUser) => {
+        user.id ? invited++ : this.toastr.error(user.status);
+    });
+    this.toastr.success(`Successfully invited ${invited} user${invited > 1 ? 's' : ''}`);
+
+    this.router.navigate(['/list']);
   }
 }
+
