@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
-import { InviteService, User } from '../service/invite.service';
+import { InviteService } from '../service/invite.service';
+import { User } from '../modals';
 
 @Component({
   selector: 'app-invite-list',
