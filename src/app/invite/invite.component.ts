@@ -1,5 +1,10 @@
-import { Component, OnInit } from '@angular/core';
-import { User } from '../service/invite.service';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { InviteService } from '../service/invite.service';
+import { of, combineLatest } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { untilDestroyed } from 'ngx-take-until-destroy';
+import { User } from '../modals';
 
 const users: User[] = [
   { email: 'user0@comtravo.com' },
@@ -20,12 +25,17 @@ const users: User[] = [
   templateUrl: './invite.component.html',
   styleUrls: ['./invite.component.css']
 })
-export class InviteComponent implements OnInit {
-  constructor() {}
+export class InviteComponent implements OnInit, OnDestroy {
+  constructor(private inviteService: InviteService, private router: Router) {}
 
   ngOnInit(): void {}
 
+  ngOnDestroy(): void {}
+
   onSubmit(): void {
-    alert('Invite users');
+    combineLatest(users.map(user => this.inviteService.invite(user))).pipe(
+        untilDestroyed(this),
+        catchError((error: Response) => of(error))
+    ).subscribe(() => this.router.navigate(['/list']));
   }
 }
